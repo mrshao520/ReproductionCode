@@ -32,7 +32,6 @@ out_img_y = out[0].detach().numpy()
 out_img_y *= 255.0
 out_img_y = out_img_y.clip(0, 255)
 out_img_y = Image.fromarray(np.uint8(out_img_y[0]), mode='L')
-
 out_img = Image.merge('YCbCr', [out_img_y, Cb, Cr]).convert('RGB')
 out_img.save(f'zoomed_{args.image}')
 
