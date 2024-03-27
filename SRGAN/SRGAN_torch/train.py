@@ -19,6 +19,7 @@ parser = argparse.ArgumentParser(description='Train Super Resolution Models')
 parser.add_argument('--upscale_factor', default=4, type=int, choices=[2, 4, 8],
                     help='super resolution upscale factor')
 parser.add_argument('--num_epochs', default=100, type=int, help='train epoch number')
+parser.add_argument('--start_epochs', default=0, type=int, help='train epoch number')
 
 
 if __name__ == '__main__':
@@ -29,6 +30,7 @@ if __name__ == '__main__':
     
     UPSCALE_FACTOR = opt.upscale_factor
     NUM_EPOCHS = opt.num_epochs
+    STRAT_EPOCHS = opt.start_epochs
     
     image_dir = '../../data/'
 
@@ -45,6 +47,11 @@ if __name__ == '__main__':
     netD = Discriminator()
     print('# discriminator parameters:', sum(param.numel() for param in netD.parameters()))
     
+    if STRAT_EPOCHS != 0:
+        netG.load_state_dict(torch.load(f'./epochs/netG_epoch_{UPSCALE_FACTOR}_{STRAT_EPOCHS}.pth'))
+        netD.load_state_dict(torch.load(f'./epochs/netD_epoch_{UPSCALE_FACTOR}_{STRAT_EPOCHS}.pth'))
+
+    
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     generator_criterion = GeneratorLoss()
@@ -60,7 +67,7 @@ if __name__ == '__main__':
     results = {'d_loss': [], 'g_loss': [], 'd_score': [], 'g_score': [], 'psnr': [], 'ssim': []}
     
     
-    for epoch in range(1, NUM_EPOCHS + 1):
+    for epoch in range(STRAT_EPOCHS + 1, STRAT_EPOCHS + NUM_EPOCHS + 1):
         train_bar = tqdm(train_loader)
         running_results = {'batch_sizes': 0, 'd_loss': 0, 'g_loss': 0, 'd_score': 0, 'g_score': 0}
     
@@ -102,7 +109,7 @@ if __name__ == '__main__':
             running_results['g_score'] += fake_out.item() * batch_size
     
             train_bar.set_description(desc='[%d/%d] Loss_D: %.4f Loss_G: %.4f D(x): %.4f D(G(z)): %.4f' % (
-                epoch, NUM_EPOCHS, running_results['d_loss'] / running_results['batch_sizes'],
+                epoch, STRAT_EPOCHS + NUM_EPOCHS + 1, running_results['d_loss'] / running_results['batch_sizes'],
                 running_results['g_loss'] / running_results['batch_sizes'],
                 running_results['d_score'] / running_results['batch_sizes'],
                 running_results['g_score'] / running_results['batch_sizes']))
@@ -164,5 +171,5 @@ if __name__ == '__main__':
         data_frame = pd.DataFrame(
             data={'Loss_D': results['d_loss'], 'Loss_G': results['g_loss'], 'Score_D': results['d_score'],
                     'Score_G': results['g_score'], 'PSNR': results['psnr'], 'SSIM': results['ssim']},
-            index=range(1, epoch + 1))
+            index=range(1, epoch - STRAT_EPOCHS))
         data_frame.to_csv(out_path + 'srf_' + str(UPSCALE_FACTOR) + '_train_results.csv', index_label='Epoch')
