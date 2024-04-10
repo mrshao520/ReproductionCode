@@ -2,6 +2,8 @@ epochs/
 images/
 training_results/
 
+*.png
+*.jpg
 
 
 # Byte-compiled / optimized / DLL files

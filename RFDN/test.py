@@ -22,7 +22,7 @@ def main():
     # --------------------------------
     # basic settings
     # --------------------------------
-    testsets = data_path + 'Set5'
+    testsets = data_path + 'BSDS100'
     testset_L = 'X4'
     #testset_L = 'DIV2K_test_LR_bicubic'
 
