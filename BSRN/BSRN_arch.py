@@ -10,9 +10,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-import basicsr.archs.Upsamplers as Upsamplers
-from basicsr.utils.registry import ARCH_REGISTRY
+import Upsamplers
 
+import matplotlib.pyplot as plt
+from torchvision.utils import make_grid, save_image
+
+from utils import *
 
 class DepthWiseConv(nn.Module):
     def __init__(self, in_ch, out_ch, kernel_size=3, stride=1, padding=1,
@@ -287,7 +290,6 @@ def make_layer(block, n_layers):
     return nn.Sequential(*layers)
 
 
-@ARCH_REGISTRY.register()
 class BSRN(nn.Module):
     def __init__(self, num_in_ch=3, num_feat=64, num_block=8, num_out_ch=3, upscale=4,
                  conv='BSConvU', upsampler='pixelshuffledirect', p=0.25):
@@ -333,8 +335,15 @@ class BSRN(nn.Module):
             raise NotImplementedError(("Check the Upsampeler. None or not support yet"))
 
     def forward(self, input):
+        index = 0
+        
         input = torch.cat([input, input, input, input], dim=1)
+        
         out_fea = self.fea_conv(input)
+        
+        viaualize_feature(1, out_fea[0], "out_fea")
+        
+        
         out_B1 = self.B1(out_fea)
         out_B2 = self.B2(out_B1)
         out_B3 = self.B3(out_B2)
@@ -345,10 +354,20 @@ class BSRN(nn.Module):
         out_B8 = self.B8(out_B7)
 
         trunk = torch.cat([out_B1, out_B2, out_B3, out_B4, out_B5, out_B6, out_B7, out_B8], dim=1)
+        
+        viaualize_feature(2, trunk[0], "trunk")
+        
         out_B = self.c1(trunk)
+        
+        viaualize_feature(3, out_B[0], "out_B")
+        
         out_B = self.GELU(out_B)
+        
+        viaualize_feature(4, out_B[0], "out_B")
 
         out_lr = self.c2(out_B) + out_fea
+        
+        viaualize_feature(5, out_lr[0], "out_lr")
 
         output = self.upsampler(out_lr)
 
