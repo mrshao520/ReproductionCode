@@ -293,6 +293,7 @@ def make_layer(block, n_layers):
 class BSRN(nn.Module):
     def __init__(self, num_in_ch=3, num_feat=64, num_block=8, num_out_ch=3, upscale=4,
                  conv='BSConvU', upsampler='pixelshuffledirect', p=0.25):
+        
         super(BSRN, self).__init__()
         kwargs = {'padding': 1}
         if conv == 'BSConvS':
